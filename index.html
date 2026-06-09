@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CATUR KEUN</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d0f;--surface:#161618;--surface2:#1e1e22;--border:#2e2e36;--border2:#3e3e4a;
+  --text:#f0f0f4;--muted:#6e6e88;--accent:#7c6af7;--accent2:#a78bfa;
+  --gold:#f59e0b;--danger:#ef4444;--success:#10b981;--pruned:#f97316;
+  --mono:'Space Mono',monospace;--sans:'Sora',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+header h1{font-size:1rem;font-weight:700;}header h1 span{color:var(--accent2);}
+.badge{font-family:var(--mono);font-size:.6rem;padding:2px 8px;border-radius:4px;border:1px solid var(--border2);color:var(--muted);}
+.app{display:grid;grid-template-columns:260px 1fr 300px;height:calc(100vh - 49px);}
+.panel{overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.75rem;border-right:1px solid var(--border);}
+.panel:last-child{border-right:none;border-left:1px solid var(--border);}
+.panel-title{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+.ctrl-label{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;}
+.toggle-group{display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden;}
+.toggle-btn{flex:1;padding:.42rem .5rem;background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.toggle-btn.active{background:var(--accent);color:#fff;}
+.slider-wrap{display:flex;align-items:center;gap:.5rem;}
+input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;}
+.slider-val{font-family:var(--mono);font-size:.85rem;color:var(--accent2);min-width:1.2rem;text-align:center;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;}
+.stat-value{font-family:var(--mono);font-size:1.2rem;font-weight:700;}
+.stat-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:.72rem;}
+.cmp-table th{padding:.35rem .5rem;background:var(--surface2);color:var(--muted);font-weight:600;font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;text-align:left;border:1px solid var(--border);}
+.cmp-table td{padding:.35rem .5rem;border:1px solid var(--border);font-family:var(--mono);font-size:.68rem;}
+.mm-col{color:var(--accent2);}.ab-col{color:var(--success);}.eff-col{color:var(--gold);font-weight:700;}
+.btn{padding:.45rem .9rem;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--sans);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn:hover{background:var(--border2);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.primary:hover{opacity:.88;}
+.btn-row{display:flex;gap:.4rem;flex-wrap:wrap;}
+.log-box{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.6rem;font-family:var(--mono);font-size:.62rem;color:var(--muted);max-height:120px;overflow-y:auto;line-height:1.7;}
+.log-entry.ai{color:var(--success);}.log-entry.sys{color:var(--accent2);}.log-entry.win{color:var(--gold);}
+.algo-badge{font-family:var(--mono);font-size:.6rem;padding:2px 8px;border-radius:20px;font-weight:700;}
+.algo-badge.mm{background:rgba(124,106,247,.15);color:var(--accent2);border:1px solid var(--accent);}
+.algo-badge.ab{background:rgba(16,185,129,.12);color:var(--success);border:1px solid var(--success);}
+.game-area{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;padding:1rem;background:var(--bg);}
+.status-bar{display:flex;align-items:center;gap:.75rem;padding:.55rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:300px;justify-content:center;flex-wrap:wrap;}
+.status-text{font-size:.88rem;font-weight:600;}
+.turn-dot{width:14px;height:14px;border-radius:50%;background:#f0d9b5;border:2px solid #888;transition:all .3s;}
+.turn-dot.black{background:#2c1b0e;border-color:#ddd;}
+
+/* ── BOARD ── */
+.board-outer{display:flex;align-items:center;gap:6px;}
+.rank-col{display:flex;flex-direction:column;font-family:var(--mono);font-size:.7rem;color:#8a7a6a;}
+.rank-col span{height:72px;display:flex;align-items:center;justify-content:center;width:18px;}
+.file-row{display:flex;margin-top:3px;}
+.file-row span{width:72px;text-align:center;font-family:var(--mono);font-size:.7rem;color:#8a7a6a;}
+.board{
+  display:grid;
+  grid-template-columns:repeat(8,72px);
+  grid-template-rows:repeat(8,72px);
+  border:4px solid #3d2b1f;
+  border-radius:4px;
+  overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.8),0 0 0 1px #5a4030;
+}
+.sq{
+  width:72px;height:72px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;
+  transition:filter .1s;
+}
+.sq.light{background:#f0d9b5;}
+.sq.dark{background:#b58863;}
+.sq.selected{box-shadow:inset 0 0 0 4px rgba(124,106,247,.9);z-index:2;}
+.sq.last-from{background:#cdd26a !important;}
+.sq.last-to{background:#aaa23a !important;}
+.sq.in-check{background:#c94b4b !important;}
+.sq.legal-dot::after{
+  content:'';position:absolute;
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(0,0,0,.22);pointer-events:none;z-index:3;
+}
+.sq.legal-cap::after{
+  content:'';position:absolute;inset:4px;
+  border-radius:50%;border:5px solid rgba(0,0,0,.25);
+  pointer-events:none;z-index:3;
+}
+.sq:hover:not(.selected){filter:brightness(1.1);}
+
+/* Piece container — always 68x68 */
+.piece{
+  width:68px;height:68px;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  position:relative;z-index:1;
+}
+.piece svg{width:64px;height:64px;display:block;}
+
+/* node */
+.node-display{display:flex;gap:1.5rem;align-items:center;}
+.node-item{text-align:center;}
+.node-value{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--accent2);}
+.node-value.pruned{color:var(--pruned);}
+.node-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* captured */
+.cap-row{display:flex;align-items:center;gap:1px;min-height:28px;flex-wrap:wrap;}
+.cap-row .cap-piece{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;}
+.cap-row .cap-piece svg{width:20px;height:20px;}
+.cap-lbl{font-size:.62rem;color:var(--muted);font-family:var(--mono);margin-right:4px;}
+.adv{font-family:var(--mono);font-size:.7rem;color:var(--gold);font-weight:700;margin-left:4px;}
+
+.tree-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:auto;min-height:180px;flex:1;}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem;}
+.legend-item{display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--muted);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+.pseudo-box{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.6rem .75rem;font-family:var(--mono);font-size:.6rem;line-height:1.9;color:var(--muted);max-height:180px;overflow-y:auto;}
+.move-list{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.5rem;font-family:var(--mono);font-size:.65rem;max-height:110px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+.move-item{padding:2px 4px;color:var(--muted);}
+.move-item.w-mv{color:var(--text);}.move-item.b-mv{color:var(--accent2);}
+@media(max-width:1100px){.app{grid-template-columns:240px 1fr;}.panel:last-child{display:none;}.sq{width:58px;height:58px;}.piece{width:54px;height:54px;}.piece svg{width:52px;height:52px;}.board{grid-template-columns:repeat(8,58px);grid-template-rows:repeat(8,58px);}.rank-col span{height:58px;}.file-row span{width:58px;}}
+@media(max-width:700px){.app{grid-template-columns:1fr;height:auto;}.panel{border-right:none;border-bottom:1px solid var(--border);}.sq{width:46px;height:46px;}.piece{width:42px;height:42px;}.piece svg{width:40px;height:40px;}.board{grid-template-columns:repeat(8,46px);grid-template-rows:repeat(8,46px);}.rank-col span{height:46px;}.file-row span{width:46px;}}
+hr{border:none;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<header>
+  <h1>CATUR<span>KEUN AI</span></h1>
+  <span class="badge">Minimax + α-β Pruning</span>
+  <span class="badge">Full Chess 8×8</span>
+  <span class="badge">Muhammad FadillaH Ramadhan</span>
+</header>
+<div class="app">
+
+<!-- LEFT -->
+<aside class="panel">
+  <div class="panel-title">Pengaturan</div>
+  <div>
+    <div class="ctrl-label">Mode Permainan</div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btn-hva" onclick="setMode('hva')">Human vs AI</button>
+      <button class="toggle-btn" id="btn-hvh" onclick="setMode('hvh')">Human vs Human</button>
+    </div>
+  </div>
+  <div id="algo-wrap">
+    <div class="ctrl-label">Algoritma AI</div>
+    <div class="toggle-group">
+      <button class="toggle-btn" id="btn-mm" onclick="setAlgo('minimax')">Minimax</button>
+      <button class="toggle-btn active" id="btn-ab" onclick="setAlgo('alphabeta')">α-β Pruning</button>
+    </div>
+  </div>
+  <div id="depth-wrap">
+    <div class="ctrl-label">Kedalaman Pencarian</div>
+    <div class="slider-wrap">
+      <input type="range" id="dsl" min="1" max="4" value="3" oninput="document.getElementById('dv').textContent=this.value;searchDepth=+this.value">
+      <span class="slider-val" id="dv">3</span>
+    </div>
+    <div style="font-size:.62rem;color:var(--muted)">⚠️ Depth 4=lambat | Depth 2=cepat</div>
+  </div>
+  <div id="side-wrap">
+    <div class="ctrl-label">Anda bermain sebagai</div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btn-w" onclick="setHC('white')">♔ Putih (Jalan dulu)</button>
+      <button class="toggle-btn" id="btn-b" onclick="setHC('black')">♚ Hitam</button>
+    </div>
+  </div>
+  <hr>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="sw" style="color:#f0d9b5">0</div><div class="stat-label">♔ Putih Menang</div></div>
+    <div class="stat-card"><div class="stat-value" id="sb" style="color:var(--accent2)">0</div><div class="stat-label">♚ Hitam Menang</div></div>
+    <div class="stat-card"><div class="stat-value" id="sd" style="color:var(--gold)">0</div><div class="stat-label">Seri</div></div>
+    <div class="stat-card"><div class="stat-value" id="sm" style="color:var(--muted)">0</div><div class="stat-label">Total Langkah</div></div>
+  </div>
+  <hr>
+  <div>
+    <div class="ctrl-label">Perbandingan Node</div>
+    <table class="cmp-table">
+      <tr><th>Metrik</th><th class="mm-col">Minimax</th><th class="ab-col">α-β</th></tr>
+      <tr><td>Node</td><td class="mm-col" id="cmm">—</td><td class="ab-col" id="cab">—</td></tr>
+      <tr><td>Dipangkas</td><td>—</td><td class="ab-col" id="cpr">—</td></tr>
+      <tr><td>Efisiensi</td><td colspan="2" class="eff-col" id="cef" style="text-align:center">—</td></tr>
+    </table>
+  </div>
+  <div>
+    <div class="ctrl-label">Log</div>
+    <div class="log-box" id="glog"><div class="log-entry sys">⬡ Chess AI siap!</div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn primary" onclick="resetGame()">↺ Reset</button>
+    <button class="btn" onclick="undoMove()">← Undo</button>
+    <button class="btn" onclick="flipBoard()">⇅ Flip</button>
+  </div>
+</aside>
+
+<!-- CENTER -->
+<main class="game-area">
+  <div class="status-bar">
+    <div class="turn-dot" id="tdot"></div>
+    <span class="status-text" id="stxt">Giliran Putih (Anda)</span>
+    <span class="algo-badge ab" id="abadge">ALPHA-BETA</span>
+  </div>
+  <div class="cap-row" id="capB"><span class="cap-lbl">Hitam tangkap:</span></div>
+  <div class="board-outer">
+    <div class="rank-col" id="rcol"></div>
+    <div>
+      <div class="board" id="cboard"></div>
+      <div class="file-row" id="frow"></div>
+    </div>
+  </div>
+  <div class="cap-row" id="capW"><span class="cap-lbl">Putih tangkap:</span></div>
+  <div class="node-display">
+    <div class="node-item"><div class="node-value" id="nc">0</div><div class="node-lbl">Node Dievaluasi</div></div>
+    <div class="node-item"><div class="node-value pruned" id="pc">0</div><div class="node-lbl">Node Dipangkas</div></div>
+    <div class="node-item"><div class="node-value" id="es" style="color:var(--gold)">0</div><div class="node-lbl">Skor Evaluasi</div></div>
+  </div>
+</main>
+
+<!-- RIGHT -->
+<aside class="panel">
+  <div class="panel-title">Visualisasi Game Tree (3 Level)</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>MAX (Putih)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div>MIN (Hitam)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--pruned)"></div>Dipangkas</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Pilihan AI</div>
+  </div>
+  <div class="tree-wrap"><svg id="tsvg" width="280" height="300" style="display:block"></svg></div>
+  <hr>
+  <div class="panel-title">Riwayat Langkah</div>
+  <div class="move-list" id="mvlist"></div>
+  <hr>
+  <div class="panel-title">Pseudocode Aktif</div>
+  <div class="pseudo-box" id="pbox"></div>
+</aside>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   PIECE SVGs — sangat jelas hitam & putih
+   Putih = fill krem (#f5ead0) + outline hitam tebal
+   Hitam = fill gelap (#1e1008) + outline putih/krem
+══════════════════════════════════════ */
+function pieceSVG(type, isWhite) {
+  const W = isWhite;
+  // Colors
+  const body  = W ? '#f5ead0' : '#1e1008';
+  const outl  = W ? '#1a0f00' : '#f5ead0';
+  const inner = W ? '#c8a86b' : '#5a3a1a';
+  const sw    = 2.0;   // stroke-width main
+  const sw2   = 1.2;   // stroke-width detail
+
+  const base = `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg">`;
+  const shadow = `<ellipse cx="22.5" cy="43" rx="11" ry="2" fill="rgba(0,0,0,0.25)"/>`;
+
+  if (type === 'K') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="11.5" y="36" width="22" height="5" rx="1" stroke-width="${sw}"/>
+      <rect x="14" y="31.5" width="17" height="5" rx="1" stroke-width="${sw}"/>
+      <path d="M11 31.5 C11 25 14 22 22.5 22 C31 22 34 25 34 31.5" stroke-width="${sw}" fill="${body}"/>
+      <path d="M20 22 C20 18 21 14 22.5 12 C24 14 25 18 25 22" stroke-width="${sw}" fill="${body}"/>
+      <line x1="22.5" y1="8" x2="22.5" y2="16" stroke="${outl}" stroke-width="${sw+0.5}"/>
+      <line x1="18.5" y1="12" x2="26.5" y2="12" stroke="${outl}" stroke-width="${sw+0.5}"/>
+      <circle cx="22.5" cy="7" r="2.2" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+    </g></svg>`;
+
+  if (type === 'Q') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="11.5" y="35.5" width="22" height="5" rx="1" stroke-width="${sw}"/>
+      <path d="M9 26 L12.5 35.5 H32.5 L36 26 L30 31 L22.5 16 L15 31 Z" stroke-width="${sw}" fill="${body}"/>
+      <circle cx="9"  cy="25" r="3" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+      <circle cx="22.5" cy="13" r="3" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+      <circle cx="36" cy="25" r="3" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+      <circle cx="15" cy="20" r="2.5" fill="${body}" stroke="${outl}" stroke-width="${sw2}"/>
+      <circle cx="30" cy="20" r="2.5" fill="${body}" stroke="${outl}" stroke-width="${sw2}"/>
+    </g></svg>`;
+
+  if (type === 'R') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="10" y="38" width="25" height="3.5" rx="1" stroke-width="${sw}"/>
+      <rect x="13" y="31.5" width="19" height="7" rx="1" stroke-width="${sw}"/>
+      <rect x="15" y="18" width="15" height="14" rx="1" stroke-width="${sw}"/>
+      <path d="M11 9.5 H34 V18 H11 Z" stroke-width="${sw}"/>
+      <rect x="11" y="7" width="4.5" height="4.5" rx=".5" stroke-width="${sw}"/>
+      <rect x="20.25" y="7" width="4.5" height="4.5" rx=".5" stroke-width="${sw}"/>
+      <rect x="29.5" y="7" width="4.5" height="4.5" rx=".5" stroke-width="${sw}"/>
+      <line x1="22.5" y1="18" x2="22.5" y2="31.5" stroke="${inner}" stroke-width="${sw2}"/>
+    </g></svg>`;
+
+  if (type === 'B') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="11.5" y="36" width="22" height="5" rx="1" stroke-width="${sw}"/>
+      <ellipse cx="22.5" cy="33" rx="8" ry="3.5" stroke-width="${sw}"/>
+      <path d="M16 32 C14 25 16 16 22.5 11 C29 16 31 25 29 32" stroke-width="${sw}" fill="${body}"/>
+      <circle cx="22.5" cy="10" r="3.2" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+      <circle cx="22.5" cy="9.5" r="1" fill="${outl}" stroke="none"/>
+      <line x1="19" y1="22" x2="26" y2="22" stroke="${inner}" stroke-width="${sw2}"/>
+    </g></svg>`;
+
+  if (type === 'N') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="11" y="37" width="23" height="4.5" rx="1" stroke-width="${sw}"/>
+      <path d="M12 37 C11 30 10 25 14 20 C15 17 16 12 21 9 C24 7 27 8 28 10 
+               C30 9 32 10 31 13 C33 15 33 18 30 21 C33 24 34 30 33 37 Z" 
+            stroke-width="${sw}" fill="${body}"/>
+      <circle cx="25" cy="12.5" r="2.5" fill="${outl}" stroke="none"/>
+      <path d="M14 20 C16 22 19 21 20 19" fill="none" stroke="${inner}" stroke-width="${sw2}"/>
+      <path d="M12 30 C14 31 15 33 14 35" fill="none" stroke="${inner}" stroke-width="${sw2}"/>
+    </g></svg>`;
+
+  if (type === 'P') return base + shadow + `
+    <g fill="${body}" stroke="${outl}" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="12" y="37" width="21" height="4.5" rx="1" stroke-width="${sw}"/>
+      <rect x="14.5" y="32.5" width="16" height="5" rx="1" stroke-width="${sw}"/>
+      <path d="M17 32.5 C15 28 16 22 22.5 19 C29 22 30 28 28 32.5" stroke-width="${sw}" fill="${body}"/>
+      <circle cx="22.5" cy="16.5" r="5" fill="${body}" stroke="${outl}" stroke-width="${sw}"/>
+    </g></svg>`;
+
+  return '';
+}
+
+// Cache all 12 piece SVGs
+const PSVG = {};
+['K','Q','R','B','N','P'].forEach(t => {
+  PSVG['w'+t] = pieceSVG(t, true);
+  PSVG['b'+t] = pieceSVG(t, false);
+});
+
+/* ══════════════════════════════════════
+   GAME CONSTANTS & STATE
+══════════════════════════════════════ */
+const PV = {P:100,N:320,B:330,R:500,Q:900,K:20000};
+const PST = {
+  P:[0,0,0,0,0,0,0,0,50,50,50,50,50,50,50,50,10,10,20,30,30,20,10,10,5,5,10,25,25,10,5,5,0,0,0,20,20,0,0,0,5,-5,-10,0,0,-10,-5,5,5,10,10,-20,-20,10,10,5,0,0,0,0,0,0,0,0],
+  N:[-50,-40,-30,-30,-30,-30,-40,-50,-40,-20,0,0,0,0,-20,-40,-30,0,10,15,15,10,0,-30,-30,5,15,20,20,15,5,-30,-30,0,15,20,20,15,0,-30,-30,5,10,15,15,10,5,-30,-40,-20,0,5,5,0,-20,-40,-50,-40,-30,-30,-30,-30,-40,-50],
+  B:[-20,-10,-10,-10,-10,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,10,10,5,0,-10,-10,5,5,10,10,5,5,-10,-10,0,10,10,10,10,0,-10,-10,10,10,10,10,10,10,-10,-10,5,0,0,0,0,5,-10,-20,-10,-10,-10,-10,-10,-10,-20],
+  R:[0,0,0,0,0,0,0,0,5,10,10,10,10,10,10,5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,0,0,0,5,5,0,0,0],
+  Q:[-20,-10,-10,-5,-5,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,5,5,5,0,-10,-5,0,5,5,5,5,0,-5,0,0,5,5,5,5,0,-5,-10,5,5,5,5,5,0,-10,-10,0,5,0,0,0,0,-10,-20,-10,-10,-5,-5,-10,-10,-20],
+  K:[-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-20,-30,-30,-40,-40,-30,-30,-20,-10,-20,-20,-20,-20,-20,-20,-10,20,20,0,0,0,0,20,20,20,30,10,0,0,10,30,20]
+};
+
+let gameMode='hva', algo='alphabeta', searchDepth=3;
+let humanColor='white', aiColor='black';
+let currentTurn='white', gameOver=false, boardFlipped=false;
+let selectedSq=null, legalMoves=[], lastMove=null;
+let history=[], moveList=[], scores={white:0,black:0,draw:0}, totalMoves=0;
+let capW=[], capB=[];
+let nodeCount=0, prunedCount=0, treeData=null, cmpData={mm:null,ab:null,pr:null};
+let board=[], CR={wK:true,wQ:true,bK:true,bQ:true}, EP=null;
+
+function initBoard(){
+  board=Array(64).fill(null);
+  ['bR','bN','bB','bQ','bK','bB','bN','bR'].forEach((p,i)=>board[i]=p);
+  for(let i=8;i<16;i++) board[i]='bP';
+  for(let i=48;i<56;i++) board[i]='wP';
+  ['wR','wN','wB','wQ','wK','wB','wN','wR'].forEach((p,i)=>board[56+i]=p);
+}
+
+/* helpers */
+const gc=p=>p?p[0]:null, gt=p=>p?p[1]:null, op=c=>c==='w'?'b':'w';
+const rk=i=>Math.floor(i/8), fl=i=>i%8, sq=(r,f)=>r*8+f;
+
+/* move gen */
+function rawMoves(b,idx,ep,cr){
+  const p=b[idx]; if(!p) return [];
+  const c=p[0],t=p[1],r=rk(idx),f=fl(idx); const ms=[];
+  const add=to=>{if(to<0||to>63||gc(b[to])===c) return; ms.push(to);};
+  const slide=(dr,df)=>{let nr=r+dr,nf=f+df; while(nr>=0&&nr<8&&nf>=0&&nf<8){const s2=sq(nr,nf); if(gc(b[s2])===c) break; ms.push(s2); if(b[s2]) break; nr+=dr;nf+=df;}};
+  if(t==='P'){
+    const d=c==='w'?-1:1,sr=c==='w'?6:1,fw=sq(r+d,f);
+    if(!b[fw]){ms.push(fw); if(r===sr&&!b[sq(r+2*d,f)]) ms.push(sq(r+2*d,f));}
+    [[-1],[1]].forEach(([df2])=>{if(f+df2<0||f+df2>7) return; const t2=sq(r+d,f+df2); if(gc(b[t2])===op(c)||t2===ep) ms.push(t2);});
+  } else if(t==='N'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,df])=>{if(r+dr>=0&&r+dr<8&&f+df>=0&&f+df<8) add(sq(r+dr,f+df));});
+  } else if(t==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(v=>slide(...v));}
+  else if(t==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(v=>slide(...v));}
+  else if(t==='Q'){[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(v=>slide(...v));}
+  else if(t==='K'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,df])=>{if(r+dr>=0&&r+dr<8&&f+df>=0&&f+df<8) add(sq(r+dr,f+df));});
+    if(cr){
+      if(c==='w'&&cr.wK&&!b[61]&&!b[62]&&!att(b,60,'b')&&!att(b,61,'b')&&!att(b,62,'b')) ms.push(62);
+      if(c==='w'&&cr.wQ&&!b[59]&&!b[58]&&!b[57]&&!att(b,60,'b')&&!att(b,59,'b')&&!att(b,58,'b')) ms.push(58);
+      if(c==='b'&&cr.bK&&!b[5]&&!b[6]&&!att(b,4,'w')&&!att(b,5,'w')&&!att(b,6,'w')) ms.push(6);
+      if(c==='b'&&cr.bQ&&!b[3]&&!b[2]&&!b[1]&&!att(b,4,'w')&&!att(b,3,'w')&&!att(b,2,'w')) ms.push(2);
+    }
+  }
+  return ms;
+}
+function att(b,s2,by){for(let i=0;i<64;i++){if(gc(b[i])===by&&rawMoves(b,i,null,null).includes(s2)) return true;} return false;}
+function king(b,c){for(let i=0;i<64;i++) if(b[i]===c+'K') return i; return -1;}
+function inCk(b,c){const k=king(b,c); return k>=0&&att(b,k,op(c));}
+function legalFor(b,from,ep,cr){const c=gc(b[from]); return rawMoves(b,from,ep,cr).filter(to=>{const nb=[...b]; applyM(nb,from,to,ep); return !inCk(nb,c);});}
+function allLegal(b,c,ep,cr){const ms=[]; for(let i=0;i<64;i++){if(gc(b[i])===c) legalFor(b,i,ep,cr).forEach(to=>ms.push({from:i,to}));} return ms;}
+function applyM(b,from,to,ep){
+  const p=b[from],c=p[0],t=p[1]; b[to]=p; b[from]=null;
+  if(t==='P'&&ep!=null&&to===ep){const pr=c==='w'?rk(to)+1:rk(to)-1; b[sq(pr,fl(to))]=null;}
+  if(t==='P'&&(rk(to)===0||rk(to)===7)) b[to]=c+'Q';
+  if(t==='K'&&Math.abs(fl(to)-fl(from))===2){
+    if(to===62){b[63]=null;b[61]='wR';} else if(to===58){b[56]=null;b[59]='wR';}
+    else if(to===6){b[7]=null;b[5]='bR';} else if(to===2){b[0]=null;b[3]='bR';}
+  }
+}
+function updCR(cr,m){
+  if(m.from===60||m.to===60){cr.wK=false;cr.wQ=false;}
+  if(m.from===4||m.to===4){cr.bK=false;cr.bQ=false;}
+  if(m.from===0||m.to===0) cr.bQ=false; if(m.from===7||m.to===7) cr.bK=false;
+  if(m.from===56||m.to===56) cr.wQ=false; if(m.from===63||m.to===63) cr.wK=false;
+}
+function evaluate(b){let s=0; for(let i=0;i<64;i++){const p=b[i]; if(!p) continue; const c=p[0],t=p[1],pi=c==='w'?i:(7-rk(i))*8+fl(i); s+=c==='w'?(PV[t]+(PST[t]?PST[t][pi]:0)):-(PV[t]+(PST[t]?PST[t][pi]:0));} return s;}
+const ml=m=>'abcdefgh'[fl(m.from)]+'87654321'[rk(m.from)]+'abcdefgh'[fl(m.to)]+'87654321'[rk(m.to)];
+
+/* minimax pure (for comparison count) */
+function mmP(b,d,mx,ep,cr){window._mmN=(window._mmN||0)+1; const c=mx?'w':'b',ms=allLegal(b,c,ep,cr); if(d===0||!ms.length){return !ms.length?(inCk(b,c)?(mx?-20000:20000):0):evaluate(b);} if(mx){let best=-Infinity; for(const m of ms.slice(0,12)){const nb=[...b],nc={...cr};let ne=null; applyM(nb,m.from,m.to,ep); updCR(nc,m); if(b[m.from]&&gt(b[m.from])==='P'&&Math.abs(rk(m.to)-rk(m.from))===2) ne=sq((rk(m.from)+rk(m.to))/2,fl(m.from)); best=Math.max(best,mmP(nb,d-1,false,ne,nc));} return best;} else{let best=Infinity; for(const m of ms.slice(0,12)){const nb=[...b],nc={...cr};let ne=null; applyM(nb,m.from,m.to,ep); updCR(nc,m); if(b[m.from]&&gt(b[m.from])==='P'&&Math.abs(rk(m.to)-rk(m.from))===2) ne=sq((rk(m.from)+rk(m.to))/2,fl(m.from)); best=Math.min(best,mmP(nb,d-1,true,ne,nc));} return best;}}
+
+/* alpha-beta */
+function abSearch(b,d,alpha,beta,mx,ep,cr,node){
+  window._abN=(window._abN||0)+1;
+  const c=mx?'w':'b',ms=allLegal(b,c,ep,cr);
+  if(d===0||!ms.length){const sc=!ms.length?(inCk(b,c)?(mx?-20000+d:20000-d):0):evaluate(b); if(node) node.score=sc; return sc;}
+  if(mx){let best=-Infinity,pruned=false;
+    for(let i=0;i<ms.length;i++){const m=ms[i];
+      if(pruned){window._prN=(window._prN||0)+1; if(node) node.children.push({pruned:true,score:'✂',label:ml(m),children:[],type:'MAX'}); continue;}
+      const nb=[...b],nc={...cr};let ne=null; applyM(nb,m.from,m.to,ep); updCR(nc,m);
+      if(b[m.from]&&gt(b[m.from])==='P'&&Math.abs(rk(m.to)-rk(m.from))===2) ne=sq((rk(m.from)+rk(m.to))/2,fl(m.from));
+      const child=node?{pruned:false,score:0,label:ml(m),children:[],type:'MIN',isChosen:false}:null;
+      if(node) node.children.push(child);
+      const val=abSearch(nb,d-1,alpha,beta,false,ne,nc,child);
+      if(child) child.score=val; if(val>best) best=val; if(val>alpha) alpha=val; if(beta<=alpha) pruned=true;}
+    if(node) node.score=best; return best;}
+  else{let best=Infinity,pruned=false;
+    for(let i=0;i<ms.length;i++){const m=ms[i];
+      if(pruned){window._prN=(window._prN||0)+1; if(node) node.children.push({pruned:true,score:'✂',label:ml(m),children:[],type:'MIN'}); continue;}
+      const nb=[...b],nc={...cr};let ne=null; applyM(nb,m.from,m.to,ep); updCR(nc,m);
+      if(b[m.from]&&gt(b[m.from])==='P'&&Math.abs(rk(m.to)-rk(m.from))===2) ne=sq((rk(m.from)+rk(m.to))/2,fl(m.from));
+      const child=node?{pruned:false,score:0,label:ml(m),children:[],type:'MAX',isChosen:false}:null;
+      if(node) node.children.push(child);
+      const val=abSearch(nb,d-1,alpha,beta,true,ne,nc,child);
+      if(child) child.score=val; if(val<best) best=val; if(val<beta) beta=val; if(beta<=alpha) pruned=true;}
+    if(node) node.score=best; return best;}
+}
+
+function getBestMove(){
+  const c=aiColor[0],mx=c==='w';
+  const ms=allLegal(board,c,EP,CR); if(!ms.length) return null;
+  window._mmN=0; mmP([...board],Math.min(searchDepth,2),mx,EP,{...CR});
+  const mmN=window._mmN;
+  window._abN=0;window._prN=0;
+  const root={score:0,label:'ROOT',children:[],type:mx?'MAX':'MIN',pruned:false};
+  let bv=mx?-Infinity:Infinity,bm=null;
+  for(const m of ms){
+    const nb=[...board],nc={...CR};let ne=null;
+    applyM(nb,m.from,m.to,EP); updCR(nc,m);
+    if(board[m.from]&&gt(board[m.from])==='P'&&Math.abs(rk(m.to)-rk(m.from))===2) ne=sq((rk(m.from)+rk(m.to))/2,fl(m.from));
+    const child={score:0,label:ml(m),children:[],type:mx?'MIN':'MAX',pruned:false,isChosen:false};
+    root.children.push(child);
+    const val=abSearch(nb,searchDepth-1,-Infinity,Infinity,!mx,ne,nc,child);
+    child.score=val; if(mx?val>bv:val<bv){bv=val;bm=m;}
+  }
+  root.score=bv;
+  root.children.forEach(ch=>{if(ch.label===ml(bm)) ch.isChosen=true;});
+  treeData=root; nodeCount=algo==='alphabeta'?window._abN:mmN; prunedCount=window._prN;
+  cmpData={mm:mmN,ab:window._abN,pr:window._prN};
+  return bm;
+}
+
+/* ══════════════════════════════════════
+   GAME FLOW
+══════════════════════════════════════ */
+function handleClick(idx){
+  if(gameOver||(gameMode==='hva'&&currentTurn!==humanColor)) return;
+  const c=currentTurn[0];
+  if(selectedSq===null){
+    if(!board[idx]||gc(board[idx])!==c) return;
+    selectedSq=idx; legalMoves=legalFor(board,idx,EP,CR); renderBoard();
+  } else {
+    if(legalMoves.includes(idx)) execMove(selectedSq,idx,true);
+    else if(board[idx]&&gc(board[idx])===c){selectedSq=idx;legalMoves=legalFor(board,idx,EP,CR);renderBoard();}
+    else{selectedSq=null;legalMoves=[];renderBoard();}
+  }
+}
+
+function execMove(from,to,isHuman){
+  history.push({board:[...board],turn:currentTurn,ep:EP,cr:{...CR},cW:[...capW],cB:[...capB],moves:[...moveList]});
+  const piece=board[from],c=piece[0],t=piece[1],captured=board[to];
+  let epCap=null;
+  if(t==='P'&&EP!=null&&to===EP){const pr=c==='w'?rk(to)+1:rk(to)-1;epCap=sq(pr,fl(to));}
+  updCR(CR,{from,to});
+  EP=null;
+  if(t==='P'&&Math.abs(rk(to)-rk(from))===2) EP=sq((rk(from)+rk(to))/2,fl(from));
+  applyM(board,from,to,EP);
+  if(epCap!=null&&board[epCap]){c==='w'?capW.push(board[epCap]):capB.push(board[epCap]);board[epCap]=null;}
+  if(captured){c==='w'?capW.push(captured):capB.push(captured);}
+  lastMove={from,to}; selectedSq=null; legalMoves=[];
+  totalMoves++; document.getElementById('sm').textContent=totalMoves;
+  const not='abcdefgh'[fl(from)]+'87654321'[rk(from)]+'→'+'abcdefgh'[fl(to)]+'87654321'[rk(to)];
+  moveList.push({not,color:currentTurn}); updateMoveList();
+  addLog(`${isHuman?'👤':'🤖'} ${currentTurn==='white'?'Putih':'Hitam'}: ${not}`,isHuman?'':'ai');
+  const nx=currentTurn==='white'?'black':'white';
+  const nms=allLegal(board,nx[0],EP,CR);
+  currentTurn=nx; renderBoard(); renderCap();
+  if(!nms.length){
+    gameOver=true;
+    if(inCk(board,nx[0])){
+      const w=currentTurn==='white'?'white':'black';
+      scores[w]++; updScores();
+      addLog(`♚ ${w==='white'?'Putih':'Hitam'} Menang! Checkmate!`,'win');
+      document.getElementById('stxt').textContent=`Checkmate! ${w==='white'?'Putih':'Hitam'} Menang! 🏆`;
+    } else {
+      scores.draw++; updScores();
+      addLog('🤝 Stalemate — Seri!','win');
+      document.getElementById('stxt').textContent='Stalemate — Seri! 🤝';
+    }
+    return;
+  }
+  updateTurnUI();
+  if(gameMode==='hva'&&!gameOver&&currentTurn===aiColor) setTimeout(doAI,200);
+}
+
+function doAI(){
+  if(gameOver) return;
+  document.getElementById('stxt').textContent='🤖 AI sedang berpikir…';
+  setTimeout(()=>{
+    const m=getBestMove(); updNodeUI(); drawTree(); updCmp();
+    if(m) execMove(m.from,m.to,false);
+  },10);
+}
+
+/* ══════════════════════════════════════
+   RENDER
+══════════════════════════════════════ */
+function renderBoard(){
+  const el=document.getElementById('cboard'); el.innerHTML='';
+  const ckKing=inCk(board,currentTurn[0])?king(board,currentTurn[0]):-1;
+  for(let vr=0;vr<8;vr++){
+    for(let vf=0;vf<8;vf++){
+      const r=boardFlipped?7-vr:vr, f=boardFlipped?7-vf:vf, idx=sq(r,f);
+      const piece=board[idx], isLight=(r+f)%2===0;
+      const cell=document.createElement('div');
+      cell.className='sq '+(isLight?'light':'dark');
+      if(idx===selectedSq) cell.classList.add('selected');
+      if(legalMoves.includes(idx)) cell.classList.add(board[idx]?'legal-cap':'legal-dot');
+      if(lastMove&&idx===lastMove.from) cell.classList.add('last-from');
+      if(lastMove&&idx===lastMove.to) cell.classList.add('last-to');
+      if(idx===ckKing) cell.classList.add('in-check');
+      if(piece){const d=document.createElement('div');d.className='piece';d.innerHTML=PSVG[piece];cell.appendChild(d);}
+      cell.onclick=()=>handleClick(idx);
+      el.appendChild(cell);
+    }
+  }
+  // rank labels
+  const rc=document.getElementById('rcol'); rc.innerHTML='';
+  for(let vr=0;vr<8;vr++){const s=document.createElement('span');s.textContent=boardFlipped?vr+1:8-vr;rc.appendChild(s);}
+  // file labels
+  const fr=document.getElementById('frow'); fr.innerHTML='';
+  for(let vf=0;vf<8;vf++){const s=document.createElement('span');s.textContent='abcdefgh'[boardFlipped?7-vf:vf];fr.appendChild(s);}
+}
+
+function renderCap(){
+  const makeCap=(elId,list,label)=>{
+    const el=document.getElementById(elId); el.innerHTML=`<span class="cap-lbl">${label}</span>`;
+    list.forEach(p=>{const d=document.createElement('div');d.className='cap-piece';d.innerHTML=PSVG[p];el.appendChild(d);});
+  };
+  makeCap('capB',capB,'Hitam tangkap:');
+  makeCap('capW',capW,'Putih tangkap:');
+  const adv=capB.reduce((a,p)=>a+PV[gt(p)],0)-capW.reduce((a,p)=>a+PV[gt(p)],0);
+  if(adv>0){const s=document.createElement('span');s.className='adv';s.textContent='+'+adv;document.getElementById('capB').appendChild(s);}
+  else if(adv<0){const s=document.createElement('span');s.className='adv';s.textContent='+'+Math.abs(adv);document.getElementById('capW').appendChild(s);}
+}
+
+function updateTurnUI(){
+  const dot=document.getElementById('tdot'),txt=document.getElementById('stxt');
+  dot.className='turn-dot'+(currentTurn==='black'?' black':'');
+  const chk=inCk(board,currentTurn[0]);
+  if(gameMode==='hvh') txt.textContent=`Giliran ${currentTurn==='white'?'Putih':'Hitam'}${chk?' ⚠️ Check!':''}`;
+  else{const ih=currentTurn===humanColor;txt.textContent=`${ih?'Giliran Anda':'AI berpikir…'} (${currentTurn==='white'?'Putih':'Hitam'})${chk?' ⚠️ Check!':''}`;}
+}
+function updScores(){document.getElementById('sw').textContent=scores.white;document.getElementById('sb').textContent=scores.black;document.getElementById('sd').textContent=scores.draw;}
+function updateMoveList(){const ml2=document.getElementById('mvlist');ml2.innerHTML='';moveList.forEach((m,i)=>{const d=document.createElement('div');d.className='move-item '+(m.color==='white'?'w-mv':'b-mv');d.textContent=(m.color==='white'?Math.ceil((i+1)/2)+'. ':'')+m.not;ml2.appendChild(d);});ml2.scrollTop=ml2.scrollHeight;}
+function updNodeUI(){document.getElementById('nc').textContent=nodeCount.toLocaleString();document.getElementById('pc').textContent=prunedCount.toLocaleString();document.getElementById('es').textContent=(treeData&&treeData.score>0?'+':'')+((treeData&&treeData.score)||0);}
+function updCmp(){if(!cmpData.mm) return;document.getElementById('cmm').textContent=cmpData.mm.toLocaleString();document.getElementById('cab').textContent=cmpData.ab.toLocaleString();document.getElementById('cpr').textContent=cmpData.pr.toLocaleString();if(cmpData.mm>0){document.getElementById('cef').textContent=Math.round((1-cmpData.ab/cmpData.mm)*100)+'% lebih efisien';}}
+function addLog(msg,cls=''){const log=document.getElementById('glog');const d=document.createElement('div');d.className='log-entry '+cls;d.textContent=msg;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+
+/* ══════════════════════════════════════
+   GAME TREE SVG
+══════════════════════════════════════ */
+function drawTree(){
+  if(!treeData) return;
+  const svg=document.getElementById('tsvg'); svg.innerHTML='';
+  const W=280,R=15,LH=72,MD=3;
+  let nodes=[],edges=[];
+  function lay(n,d,x,xl,xr){
+    if(d>MD) return; n._x=x;n._y=22+d*LH;nodes.push({n,d});
+    const kids=(n.children||[]).slice(0,4); if(!kids.length||d===MD) return;
+    const slot=(xr-xl)/kids.length;
+    kids.forEach((ch,i)=>{const cx=xl+slot*i+slot/2;edges.push({x1:x,y1:n._y,x2:cx,y2:22+(d+1)*LH,pruned:ch.pruned,chosen:ch.isChosen});lay(ch,d+1,cx,xl+slot*i,xl+slot*(i+1));});
+  }
+  lay(treeData,0,W/2,0,W);
+  svg.setAttribute('width',W);svg.setAttribute('height',22+(MD+1)*LH+20);
+  edges.forEach(e=>{const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',e.x1);l.setAttribute('y1',e.y1);l.setAttribute('x2',e.x2);l.setAttribute('y2',e.y2);l.setAttribute('stroke',e.pruned?'#f97316':e.chosen?'#f59e0b':'#2e2e36');l.setAttribute('stroke-width',e.chosen?'2':e.pruned?'1.5':'1');l.setAttribute('stroke-dasharray',e.pruned?'3,3':'none');svg.appendChild(l);});
+  nodes.forEach(({n,d})=>{
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',n._x);c.setAttribute('cy',n._y);c.setAttribute('r',R);
+    let fill='#1e1e22',stroke='#2e2e36';
+    if(n.pruned){fill='#431407';stroke='#f97316';}else if(n.isChosen){fill='#451a03';stroke='#f59e0b';}else if(d%2===0){fill='#1a1830';stroke='#7c6af7';}else{fill='#0f2520';stroke='#10b981';}
+    c.setAttribute('fill',fill);c.setAttribute('stroke',stroke);c.setAttribute('stroke-width','1.5');g.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',n._x);t.setAttribute('y',n._y+4);t.setAttribute('text-anchor','middle');t.setAttribute('fill',n.pruned?'#f97316':n.isChosen?'#f59e0b':'#f0f0f4');t.setAttribute('font-size','8');t.setAttribute('font-family','Space Mono,monospace');t.setAttribute('font-weight','700');
+    t.textContent=String(n.pruned?'✂':(typeof n.score==='number'?n.score:'?')).substring(0,5);g.appendChild(t);
+    if(n.label&&n.label!=='ROOT'&&d<=2){const lb=document.createElementNS('http://www.w3.org/2000/svg','text');lb.setAttribute('x',n._x);lb.setAttribute('y',n._y-R-3);lb.setAttribute('text-anchor','middle');lb.setAttribute('fill','#6e6e88');lb.setAttribute('font-size','7');lb.setAttribute('font-family','Space Mono,monospace');lb.textContent=n.label;g.appendChild(lb);}
+    svg.appendChild(g);
+  });
+  ['L0 MAX','L1 MIN','L2 MAX','L3 MIN'].slice(0,MD+1).forEach((lbl,d)=>{const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',2);t.setAttribute('y',26+d*LH);t.setAttribute('fill','#3e3e4a');t.setAttribute('font-size','7');t.setAttribute('font-family','Sora,sans-serif');t.textContent=lbl;svg.appendChild(t);});
+}
+
+/* pseudocode */
+function updPseudo(){
+  const el=document.getElementById('pbox');
+  if(algo==='minimax') el.innerHTML=`<span style="color:#a78bfa">function</span> <span style="color:#f59e0b">minimax</span>(board, depth, isMax):<br>&nbsp;&nbsp;<span style="color:#a78bfa">if</span> depth==0 or noMoves:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">return</span> evaluate(board)<br><br>&nbsp;&nbsp;<span style="color:#a78bfa">if</span> isMax:<br>&nbsp;&nbsp;&nbsp;&nbsp;best = <span style="color:#ef4444">-∞</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">for</span> move in legalMoves:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val = minimax(move, d-1, False)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;best = max(best, val)<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">return</span> best<br>&nbsp;&nbsp;<span style="color:#a78bfa">else</span>: best = <span style="color:#10b981">+∞</span>, use min()`;
+  else el.innerHTML=`<span style="color:#a78bfa">function</span> <span style="color:#f59e0b">alphabeta</span>(board, d, α, β, isMax):<br>&nbsp;&nbsp;<span style="color:#a78bfa">if</span> d==0 or noMoves:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">return</span> evaluate(board)<br><br>&nbsp;&nbsp;<span style="color:#a78bfa">if</span> isMax:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">for</span> move in legalMoves:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val = alphabeta(move, d-1, α, β, False)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;α = max(α, val)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">if</span> β ≤ α: <span style="color:#f97316">break ✂ β-cutoff</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">return</span> α<br>&nbsp;&nbsp;<span style="color:#a78bfa">else</span>: β = min(β,val), α-cutoff`;
+}
+
+/* controls */
+function setMode(m){gameMode=m;document.getElementById('btn-hva').classList.toggle('active',m==='hva');document.getElementById('btn-hvh').classList.toggle('active',m==='hvh');['algo-wrap','depth-wrap','side-wrap'].forEach(id=>document.getElementById(id).style.display=m==='hvh'?'none':'');resetGame();}
+function setAlgo(a){algo=a;document.getElementById('btn-mm').classList.toggle('active',a==='minimax');document.getElementById('btn-ab').classList.toggle('active',a==='alphabeta');const b=document.getElementById('abadge');b.textContent=a==='minimax'?'MINIMAX':'ALPHA-BETA';b.className='algo-badge '+(a==='minimax'?'mm':'ab');updPseudo();addLog(`Algoritma: ${a==='minimax'?'Minimax':'Alpha-Beta'}`,'sys');}
+function setHC(c){humanColor=c;aiColor=c==='white'?'black':'white';document.getElementById('btn-w').classList.toggle('active',c==='white');document.getElementById('btn-b').classList.toggle('active',c==='black');resetGame();}
+function flipBoard(){boardFlipped=!boardFlipped;renderBoard();}
+function resetGame(){
+  initBoard();currentTurn='white';gameOver=false;selectedSq=null;legalMoves=[];lastMove=null;
+  history=[];moveList=[];capW=[];capB=[];CR={wK:true,wQ:true,bK:true,bQ:true};EP=null;
+  treeData=null;nodeCount=0;prunedCount=0;
+  document.getElementById('nc').textContent='0';document.getElementById('pc').textContent='0';document.getElementById('es').textContent='0';
+  document.getElementById('mvlist').innerHTML='';document.getElementById('tsvg').innerHTML='';
+  renderBoard();renderCap();updateTurnUI();addLog('↺ Permainan direset','sys');
+  if(gameMode==='hva'&&aiColor==='white') setTimeout(doAI,500);
+}
+function undoMove(){
+  if(!history.length) return;
+  const n=(gameMode==='hva'&&history.length>=2)?2:1;
+  for(let i=0;i<n&&history.length;i++){const p=history.pop();board=[...p.board];currentTurn=p.turn;EP=p.ep;CR={...p.cr};capW=[...p.cW];capB=[...p.cB];moveList=[...p.moves];}
+  gameOver=false;lastMove=null;selectedSq=null;legalMoves=[];
+  totalMoves=Math.max(0,totalMoves-n);document.getElementById('sm').textContent=totalMoves;
+  updateMoveList();renderBoard();renderCap();updateTurnUI();addLog('← Undo','sys');
+}
+
+/* INIT */
+initBoard();renderBoard();renderCap();updateTurnUI();updPseudo();
+addLog('♔ Full Chess AI siap! Putih jalan pertama.','sys');
+addLog('💡 Tips: Depth 2-3 untuk kecepatan optimal','sys');
+</script>
+</body>
+</html>
